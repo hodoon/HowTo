@@ -1,8 +1,8 @@
 package com.example.HowToProj.handler;
 
 import com.example.HowToProj.dto.ErrorDto;
-import com.example.HowToProj.exceoption.DuplicateMemberException;
-import com.example.HowToProj.exceoption.NotFoundMemberException;
+import com.example.HowToProj.exception.DuplicateMemberException;
+import com.example.HowToProj.exception.NotFoundMemberException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;

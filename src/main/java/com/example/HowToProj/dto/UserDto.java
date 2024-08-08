@@ -2,6 +2,7 @@ package com.example.HowToProj.dto;
 
 import com.example.HowToProj.entity.User;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.Email;
 import lombok.*;
 
 import jakarta.validation.constraints.NotNull;
@@ -30,7 +31,7 @@ public class UserDto {
 
     private Set<AuthorityDto> authorityDtoSet;
 
-    public static UserDto from(User user){
+    public static UserDto from(User user) {
         if(user == null) return null;
 
         return UserDto.builder()

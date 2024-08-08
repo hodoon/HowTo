@@ -1,4 +1,4 @@
-package com.example.HowToProj.exceoption;
+package com.example.HowToProj.exception;
 
 public class NotFoundMemberException extends RuntimeException{
     public NotFoundMemberException() {

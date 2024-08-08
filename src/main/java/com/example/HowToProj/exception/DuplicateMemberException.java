@@ -1,4 +1,4 @@
-package com.example.HowToProj.exceoption;
+package com.example.HowToProj.exception;
 
 public class DuplicateMemberException extends RuntimeException{
     public DuplicateMemberException() {

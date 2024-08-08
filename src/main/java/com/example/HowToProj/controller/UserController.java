@@ -1,7 +1,10 @@
 package com.example.HowToProj.controller;
 
 
+import com.example.HowToProj.dto.LoginDto;
+import com.example.HowToProj.dto.TokenDto;
 import com.example.HowToProj.dto.UserDto;
+import com.example.HowToProj.jwt.TokenProvider;
 import com.example.HowToProj.service.UserService;
 
 import org.slf4j.Logger;
@@ -19,9 +22,8 @@ import java.io.IOException;
 
 
 @Controller
+@RequestMapping("/api")
 public class UserController {
-
-    private final Logger logger = LoggerFactory.getLogger(UserController.class);
     private final UserService userService;
 
     public UserController(UserService userService) {
@@ -39,22 +41,21 @@ public class UserController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<UserDto> signup(@Valid @RequestBody UserDto userDto) {
-        logger.info("Sign-up request received for user : {}", userDto.getUsername());
+    public ResponseEntity<UserDto> signup(
+            @Valid @RequestBody UserDto userDto
+    ) {
         return ResponseEntity.ok(userService.signup(userDto));
     }
 
     @GetMapping("/user")
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public ResponseEntity<UserDto> getMyUserInfo(HttpServletRequest request) {
-        logger.info("Request received to get user info");
         return ResponseEntity.ok(userService.getMyUserWithAuthorities());
     }
 
     @GetMapping("/user/{username}")
     @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<UserDto> getUserInfo(@PathVariable String username) {
-        logger.info("Request received to get user info for username : {}", username);
         return ResponseEntity.ok(userService.getUserWithAuthorities(username));
     }
 }
