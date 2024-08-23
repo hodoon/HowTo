@@ -1,22 +1,23 @@
 package com.example.HowToProj.entity;
 
 import lombok.*;
+import jakarta.persistence.*;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import java.util.Set;
 
 @Entity
-@Table(name = "Authority")
+@Table(name = "authority")
 @Getter
 @Setter
 @Builder
-@AllArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Authority {
 
     @Id
     @Column(name = "authority_name", length = 50)
     private String authorityName;
+
+    @ManyToMany(mappedBy = "authorities")
+    private Set<User> users;
 }

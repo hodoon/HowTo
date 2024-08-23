@@ -28,9 +28,9 @@ public class SecurityConfig {
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
 
     public SecurityConfig(TokenProvider tokenProvider,
-                          CorsFilter corsFilter,
-                          JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,
-                          JwtAccessDeniedHandler jwtAccessDeniedHandler
+                            CorsFilter corsFilter,
+                            JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,
+                            JwtAccessDeniedHandler jwtAccessDeniedHandler
     ) {
         this.tokenProvider = tokenProvider;
         this.corsFilter = corsFilter;

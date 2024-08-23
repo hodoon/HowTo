@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Component("userDetailsService")
@@ -24,15 +25,18 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     @Transactional
-    public UserDetails loadUserByUsername(final String username) {
-        return userRepository.findOneWithAuthoritiesByUsername(username)
-                .map(user -> createUser(username, user))
-                .orElseThrow(() -> new UsernameNotFoundException(username + " -> 데이터베이스에서 찾을 수 없습니다."));
+    public UserDetails loadUserByUsername(final String identifier) {
+        Optional<User> userOptional = userRepository.findOneWithAuthoritiesByEmail(identifier)
+                .or(() -> userRepository.findOneWithAuthoritiesByUsername(identifier));
+
+        return userOptional
+                .map(user -> createUser(identifier, user))
+                .orElseThrow(() -> new UsernameNotFoundException(identifier + "-> 데이터베이스에서 찾을 수 없습니다."));
     }
 
-    private org.springframework.security.core.userdetails.User createUser(String username, User user) {
+    private org.springframework.security.core.userdetails.User createUser(String identifier, User user) {
         if (!user.isActivated()) {
-            throw new RuntimeException(username + " -> 활성화되어 있지 않습니다.");
+            throw new RuntimeException(identifier + " -> 활성화되어 있지 않습니다.");
         }
 
         List<GrantedAuthority> grantedAuthorities = user.getAuthorities().stream()

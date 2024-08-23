@@ -3,6 +3,7 @@ package com.example.HowToProj.jwt;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -15,24 +16,34 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.stream.Collectors;
 
+@Getter
 @Component
 public class TokenProvider implements InitializingBean {
     private final Logger logger = LoggerFactory.getLogger(TokenProvider.class);
     private static final String AUTHORITIES_KEY = "auth";
+    // JWT 서명에 사용되는 비밀 키
     private final String secret;
+    // 엑세스 토큰의 유효기간
     private final long tokenValidityInMilliseconds;
+    // 리프레시 토큰의 유효기간
+    private final long refreshTokenValidityInMilliseconds;
+    // HMAC SHA 키를 저장
     private Key key;
 
+    // JWT생성과 검증
     public TokenProvider(
             @Value("${jwt.secret}") String secret,
-            @Value("${jwt.token-validity-in-seconds}") long tokenValidityInSeconds) {
+            @Value("${jwt.token-validity-in-seconds}") long tokenValidityInSeconds,
+            @Value("${jwt.refresh-token-validity-in-seconds}")long refreshTokenValidityInMilliseconds) {
         this.secret = secret;
         this.tokenValidityInMilliseconds = tokenValidityInSeconds * 1000;
+        this.refreshTokenValidityInMilliseconds = refreshTokenValidityInMilliseconds * 1000;
     }
 
     @Override
@@ -41,7 +52,16 @@ public class TokenProvider implements InitializingBean {
         this.key = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String createToken(Authentication authentication) {
+    public Claims getClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
+
+    // 사용자 인증 정보 바탕으로 JWT 생성
+    public String createAccessToken(Authentication authentication) {
         String authorities = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(","));
@@ -57,6 +77,20 @@ public class TokenProvider implements InitializingBean {
                 .compact();
     }
 
+    // 리프레시 토큰 생성
+    public String createRefreshToken(String email){
+        long now = (new Date()).getTime();
+        Date validity = new Date(now + this.refreshTokenValidityInMilliseconds);
+
+        return Jwts.builder()
+                .setSubject(email)
+                .setExpiration(validity)
+                .signWith(key, SignatureAlgorithm.HS512)
+                .compact();
+    }
+
+
+    // JWT에서 사용자 정보를 추출하여 Authentication 객체를 생성
     public Authentication getAuthentication(String token) {
         Claims claims = Jwts
                 .parserBuilder()
@@ -75,21 +109,54 @@ public class TokenProvider implements InitializingBean {
         return new UsernamePasswordAuthenticationToken(principal, token, authorities);
     }
 
+    public Date getExpirationDateFromAccessToken(String newAccessToken) {
+        Claims claims = getClaims(newAccessToken);
+        return claims.getExpiration();
+    }
+
+    public ZoneId getZoneId() {
+        return ZoneId.systemDefault();
+    }
+
+    public String getUseremailFromToken(String refreshToken) {
+        Claims claims = getClaims(refreshToken);
+        return claims.getSubject();
+    }
+
+    public Date getExpirationDateFromToken(String token) {
+        try{
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            return claims.getExpiration();
+        } catch (JwtException | IllegalArgumentException e) {
+            logger.error("유효하지 않은 JWT토큰입니다.", e);
+            throw new RuntimeException("유효하지 않은 JWT토큰입니다.", e);
+        }
+    }
+
+
+    // JWT 유효성 검사
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
             return true;
         } catch (io.jsonwebtoken.security.SecurityException | MalformedJwtException e) {
-            logger.info("잘못된 JWT 서명입니다.");
+            logger.warn("잘못된 JWT 서명입니다.");
         } catch (ExpiredJwtException e) {
-            logger.info("만료된 JWT 토큰입니다.");
+            logger.warn("만료된 JWT 토큰입니다.");
         } catch (UnsupportedJwtException e) {
-            logger.info("지원되지 않는 JWT 토큰입니다.");
+            logger.warn("지원되지 않는 JWT 토큰입니다.");
         } catch (IllegalArgumentException e) {
-            logger.info("JWT 토큰이 잘못되었습니다.");
+            logger.warn("JWT 토큰이 잘못되었습니다.");
         }
         return false;
     }
+
+
+
 }
 
 
