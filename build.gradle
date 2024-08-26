@@ -37,7 +37,7 @@ dependencies {
 	implementation 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 
 	// MySQL Connector/J
-	implementation 'mysql:mysql-connector-java'
+	implementation 'mysql:mysql-connector-java:8.0.32'
 
 
 	compileOnly 'org.projectlombok:lombok'

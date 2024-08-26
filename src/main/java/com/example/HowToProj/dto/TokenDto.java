@@ -13,8 +13,6 @@ public class TokenDto {
     private final String accessToken;
     private final String refreshToken;
     private final LocalDateTime expiryDate;
-    private final String username;
-    private final String email;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
 
@@ -23,8 +21,6 @@ public class TokenDto {
                 .accessToken(token.getAccessToken())
                 .refreshToken(token.getRefreshToken())
                 .expiryDate(token.getExpiryDate())
-                .username(token.getUsername())
-                .email(token.getEmail())
                 .createdAt(token.getCreatedAt())
                 .updatedAt(token.getUpdatedAt())
                 .build();

@@ -1,6 +1,7 @@
 package com.example.HowToProj.repository;
 
 import com.example.HowToProj.entity.Token;
+import com.example.HowToProj.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -16,7 +17,7 @@ public interface TokenRepository extends JpaRepository<Token, Long> {
     Optional<Token> findByRefreshToken(String refreshToken);
 
     // 유저 이름으로 토큰 검색
-    Optional<Token> findByUsername(String username);
+    Optional<Token> findByUserUsername(String username);
 
     // 유저 Email로 토큰 검색
     Optional<Token> findByUserEmail(String email);
@@ -30,5 +31,7 @@ public interface TokenRepository extends JpaRepository<Token, Long> {
     // 이메일로 모든 토큰 삭제
     void deleteByUserEmail(String email);
 
-    boolean existsByUserEmail(String Email);
+    void deleteByUser(User user);
+
+    boolean existsByUserEmail(String email);
 }

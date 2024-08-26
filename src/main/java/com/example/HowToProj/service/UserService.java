@@ -3,6 +3,9 @@ package com.example.HowToProj.service;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.example.HowToProj.dto.TokenDto;
 import com.example.HowToProj.dto.UserDto;
@@ -23,7 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class UserService{
+public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenProvider tokenProvider;
@@ -41,19 +44,21 @@ public class UserService{
         this.tokenService = tokenService;
         this.authenticationManagerBuilder = authenticationManagerBuilder;
     }
+
     // 회원가입
     @Transactional
     public UserDto signup(UserDto userDto) {
-        //이메일중복 확인
+        // 이메일 중복 확인
         if (userRepository.findOneWithAuthoritiesByEmail(userDto.getEmail()).isPresent()) {
             throw new DuplicateMemberException("이미 가입되어 있는 유저입니다.");
         }
-        // 권한부여
+
+        // 권한 부여
         Authority authority = Authority.builder()
                 .authorityName("ROLE_USER")
                 .build();
 
-        // User객체 생성, 비밀번호는 PasswordEncorder를 사용후 암호화
+        // User 객체 생성, 비밀번호는 PasswordEncoder를 사용해 암호화
         User user = User.builder()
                 .email(userDto.getEmail())
                 .username(userDto.getUsername())
@@ -61,68 +66,68 @@ public class UserService{
                 .password(passwordEncoder.encode(userDto.getPassword()))
                 .authorities(Collections.singleton(authority))
                 .activated(true)
+                .phoneNumber(userDto.getPhoneNumber())  // phoneNumber 설정
                 .build();
 
         userRepository.save(user);
 
-        // Authentication 객체 생성
-        UsernamePasswordAuthenticationToken authenticationToken =
-                new UsernamePasswordAuthenticationToken(userDto.getUsername(), userDto.getPassword());
-        Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        //엑세스 토큰 및 리프레시 토큰 생성
-        String accessToken = tokenProvider.createAccessToken(authentication);
-        String refreshToken = tokenProvider.createRefreshToken(user.getEmail());
 
-        //엑세스 토큰 만료 시간 계산
-        LocalDateTime expiryDate = tokenProvider.getExpirationDateFromAccessToken(accessToken)
-                .toInstant()
-                .atZone(tokenProvider.getZoneId())
-                .toLocalDateTime();
-
-        //토큰 저장
-        tokenService.saveToken(accessToken, refreshToken, userDto.getEmail(), expiryDate);
-
+        // UserDto 객체 생성 및 반환
         return UserDto.builder()
-                .username(userDto.getUsername())
-                .token(TokenDto.builder()
-                        .accessToken(accessToken)
-                        .refreshToken(refreshToken)
-                        .expiryDate(expiryDate)
-                        .build())
+                .email(user.getEmail())
+                .username(user.getUsername())
+                .nickname(user.getNickname())
+                .phoneNumber(user.getPhoneNumber())
+                .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
+                .deletedAt(user.getDeletedAt())
                 .build();
     }
 
     // 로그인 기능
     @Transactional
-    public TokenDto login(String email, String password){
-        // 1. 인증 객체 생성
+    public TokenDto login(String email, String password) {
+        // 이메일 존재 여부 확인
+        Optional<User> userOpt = userRepository.findOneWithAuthoritiesByEmail(email);
+        if (userOpt.isEmpty()) {
+            throw new NotFoundMemberException("이메일 또는 비밀번호가 잘못되었습니다.");
+        }
+
+        User user = userOpt.get();
+
+        // 인증 객체 생성
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(email, password);
 
-        // 2. 인증 처리
+        // 인증 처리
         Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        // 3. 액세스 토큰 및 리프레시 토큰 생성
+        // 액세스 토큰 및 리프레시 토큰 생성
         String newAccessToken = tokenProvider.createAccessToken(authentication);
         String newRefreshToken = tokenProvider.createRefreshToken(email);
 
-        // 4. 리프레시 토큰의 만료일을 1주일로 설정
+        // 리프레시 토큰의 만료일을 1주일로 설정
         LocalDateTime newExpiryDate = LocalDateTime.now().plusWeeks(1);
 
-        // 5. 토큰 정보 갱신
-        Token updatedToken = tokenService.updateToken(email, newAccessToken, newRefreshToken, newExpiryDate);
+        // 토큰 정보 저장
+        tokenService.saveToken(newAccessToken, newRefreshToken, email, newExpiryDate);
 
-        // 6. 갱신된 토큰 정보를 TokenDto로 반환
-        return TokenDto.fromEntity(updatedToken);
+        // 갱신된 토큰 정보를 TokenDto로 반환
+        return TokenDto.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(newRefreshToken)
+                .expiryDate(newExpiryDate)
+                .createdAt(LocalDateTime.now())  // 토큰 생성 시 현재 시간으로 설정
+                .updatedAt(LocalDateTime.now())  // 토큰 생성 시 현재 시간으로 설정
+                .build();
     }
 
     @Transactional
-    public TokenDto autoLogin(String refreshToken){
+    public TokenDto autoLogin(String refreshToken) {
         // 리프레시 토큰 검증
-        if(!tokenProvider.validateToken(refreshToken)){
+        if (!tokenProvider.validateToken(refreshToken)) {
             throw new RuntimeException("리프레시 토큰이 유효하지 않음");
         }
 
@@ -130,8 +135,8 @@ public class UserService{
         String email = tokenProvider.getUseremailFromToken(refreshToken);
 
         // 기존 리프레시 토큰의 만효기간 확인
-        Date refreshTokenExpiry =  tokenProvider.getExpirationDateFromToken(refreshToken);
-        if (refreshTokenExpiry.before(new Date())){
+        Date refreshTokenExpiry = tokenProvider.getExpirationDateFromToken(refreshToken);
+        if (refreshTokenExpiry.before(new Date())) {
             throw new RuntimeException("리프레시 토큰이 만료됨");
         }
 
@@ -173,15 +178,30 @@ public class UserService{
 
     @Transactional(readOnly = true)
     public UserDto getUserWithAuthorities(String username) {
-        return UserDto.from(userRepository.findOneWithAuthoritiesByUsername(username).orElse(null));
+        User user = userRepository.findOneWithAuthoritiesByUsername(username)
+                .orElseThrow(() -> new NotFoundMemberException("사용자를 찾을 수 없습니다."));
+
+        // 사용자의 모든 토큰을 가져옴
+        Set<TokenDto> tokens = user.getTokens().stream()
+                .map(TokenDto::fromEntity)
+                .collect(Collectors.toSet());
+
+        return UserDto.fromEntity(user).toBuilder().tokens(tokens).build();
     }
 
     @Transactional(readOnly = true)
     public UserDto getMyUserWithAuthorities() {
-        return UserDto.from(
-                SecurityUtil.getCurrentUsername()
-                        .flatMap(userRepository::findOneWithAuthoritiesByUsername)
-                        .orElseThrow(() -> new NotFoundMemberException("Member not found"))
-        );
+        String currentUsername = SecurityUtil.getCurrentUsername()
+                .orElseThrow(() -> new NotFoundMemberException("현재 로그인한 사용자를 찾을 수 없습니다."));
+
+        User user = userRepository.findOneWithAuthoritiesByUsername(currentUsername)
+                .orElseThrow(() -> new NotFoundMemberException("현재 로그인한 사용자를 찾을 수 없습니다."));
+
+        // 사용자의 모든 토큰을 가져옴
+        Set<TokenDto> tokens = user.getTokens().stream()
+                .map(TokenDto::fromEntity)
+                .collect(Collectors.toSet());
+
+        return UserDto.fromEntity(user).toBuilder().tokens(tokens).build();
     }
 }

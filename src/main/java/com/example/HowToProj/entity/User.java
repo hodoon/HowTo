@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 import java.util.Set;
 
 @Entity
-@Table(name = "app_user") // 테이블 이름을 소문자로 변경
+@Table(name = "app_user")
 @Getter
 @Setter
 @Builder
@@ -41,11 +41,14 @@ public class User {
     @Column(name = "activated", nullable = false)
     private boolean activated;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Token> tokens;
+
     @ManyToMany
     @JoinTable(
             name = "user_authority",
-            joinColumns = {@JoinColumn(name = "user_id", referencedColumnName = "user_id")},
-            inverseJoinColumns = {@JoinColumn(name = "authority_name", referencedColumnName = "authority_name")}
+            joinColumns = {@JoinColumn(name = "user_id")},
+            inverseJoinColumns = {@JoinColumn(name = "authority_name")}
     )
     private Set<Authority> authorities;
 

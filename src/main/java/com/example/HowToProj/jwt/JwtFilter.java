@@ -27,8 +27,19 @@ public class JwtFilter extends GenericFilterBean {
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
-        String jwt = resolveToken(httpServletRequest);
         String requestURI = httpServletRequest.getRequestURI();
+
+        // 공개 엔드포인트는 JWT 필터를 적용하지 않도록 설정
+        if (requestURI.startsWith("/api/signup") || requestURI.startsWith("/api/login") || requestURI.startsWith("/api/authenticate")) {
+            filterChain.doFilter(servletRequest, servletResponse);
+            logger.debug("requestURI : {}", requestURI);
+            logger.debug("servletRequest : {}", servletRequest);
+            logger.debug("servletResponse : {}", servletResponse);
+            return;
+        }
+
+        String jwt = resolveToken(httpServletRequest);
+        logger.debug("Resolved JWT: {}", jwt);
 
         if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
             Authentication authentication = tokenProvider.getAuthentication(jwt);
@@ -43,7 +54,7 @@ public class JwtFilter extends GenericFilterBean {
 
     private String resolveToken(HttpServletRequest request) {
         String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
-
+        logger.debug("Authorization 헤더: {}", bearerToken);
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
         }

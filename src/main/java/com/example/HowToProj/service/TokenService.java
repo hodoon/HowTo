@@ -1,9 +1,13 @@
 package com.example.HowToProj.service;
 
+import com.example.HowToProj.dto.TokenDto;
 import com.example.HowToProj.entity.Token;
+import com.example.HowToProj.entity.User;
 import com.example.HowToProj.exception.TokenNotFoundException;
 import com.example.HowToProj.jwt.TokenProvider;
+import com.example.HowToProj.jwt.TokenStatus;
 import com.example.HowToProj.repository.TokenRepository;
+import com.example.HowToProj.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import org.springframework.stereotype.Service;
@@ -17,10 +21,12 @@ import java.util.Optional;
 public class TokenService {
     private final TokenRepository tokenRepository;
     private final TokenProvider tokenProvider;
+    private final UserRepository userRepository;
 
-    public TokenService(TokenRepository tokenRepository, TokenProvider tokenProvider) {
+    public TokenService(TokenRepository tokenRepository, TokenProvider tokenProvider, UserRepository userRepository) {
         this.tokenRepository = tokenRepository;
         this.tokenProvider = tokenProvider;
+        this.userRepository = userRepository;
     }
 
     // 1. 토큰 저장
@@ -31,18 +37,34 @@ public class TokenService {
         // 현재 시간을 가져와 createdAt, updatedA에 사용
         LocalDateTime now = LocalDateTime.now();
 
-        // Token 엔티티를 생성
+        // 이메일을 통해 User 엔티티를 찾기
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+
+        // 기존 토큰을 삭제 (해당 사용자의 모든 기존 토큰 삭제)
+        tokenRepository.deleteByUser(user);
+
+
+        // Token 엔티티를 생성하고 User와의 관계를 설정
         Token token = Token.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .username(email)
                 .expiryDate(expiryDate)
                 .createdAt(now)
                 .updatedAt(now)
+                .user(user) // User 설정
+                .status(TokenStatus.ACTIVE) // 토큰의 상태를 설정
                 .build();
 
         // Token 엔티티를 데이터베이스에 저장
         tokenRepository.save(token);
+    }
+
+    @Transactional(readOnly = true)
+    public TokenDto getTokenByEmail(String email) {
+        return tokenRepository.findByUserEmail(email)
+                .map(TokenDto::fromEntity) // Token 엔티티를 TokenDto로 변환
+                .orElse(null); // 토큰이 없을 경우 null 반환
     }
 
     @Transactional(readOnly = true)

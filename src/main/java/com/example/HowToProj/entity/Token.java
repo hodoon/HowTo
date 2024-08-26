@@ -28,11 +28,9 @@ public class Token {
     @Column(name = "expiry_date", nullable = false)
     private LocalDateTime expiryDate;
 
-    @Column(name = "username", nullable = false)
-    private String username;
-
-    @Column(name = "email", nullable = false)
-    private String email;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
