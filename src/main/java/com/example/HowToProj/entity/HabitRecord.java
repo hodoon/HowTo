@@ -6,35 +6,33 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import jakarta.persistence.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "user_settings")
+@Table(name = "habit_record")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @EntityListeners(AuditingEntityListener.class)
-public class UserSettings {
+public class HabitRecord {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "settings_id")
+    @Column(name = "record_id")
     private Long id;
 
-    @OneToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User userId;
+    @ManyToOne
+    @JoinColumn(name = "habit_id", nullable = false)
+    private Habit habit; // 해당 습관 목표
 
-    @Column(name = "notification_enabled", nullable = false)
-    private boolean notificationEnabled;
+    @Column(name = "date", nullable = false)
+    private LocalDate date; // 기록된 날짜
 
-    @Column(name = "theme", length = 20)
-    private String theme;
-
-    @Column(name = "language", length = 20)
-    private String language;
+    @Column(name = "achieved", nullable = false)
+    private boolean achieved; // 달성 여부
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)

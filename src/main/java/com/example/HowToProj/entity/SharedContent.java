@@ -25,17 +25,21 @@ public class SharedContent {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private User user; // 콘텐츠를 소유한 사용자
+
+    @ManyToOne
+    @JoinColumn(name = "diary_id", nullable = false)
+    private Diary diary; // 공유된 일기
 
     @Column(name = "content_type", length = 50, nullable = false)
-    private String contentType;
+    private String contentType; // 콘텐츠의 유형 (예: "DIARY")
 
     @Column(name = "content_id_in_type", nullable = false)
-    private Long contentIdInType;
+    private Long contentIdInType; // 콘텐츠 ID (예: 일기 ID)
 
     @ManyToOne
     @JoinColumn(name = "shared_with_user_id", nullable = false)
-    private User sharedWith;
+    private User sharedWith; // 공유된 사용자
 
     @CreatedDate
     @Column(name = "shared_at", updatable = false)

@@ -7,6 +7,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Entity
 @Table(name = "diary")
@@ -27,6 +28,9 @@ public class Diary {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Column(name = "title", length = 50, nullable = false)
+    private String title;
+
     @Column(name = "content", length = 2000, nullable = false)
     private String content;
 
@@ -43,4 +47,7 @@ public class Diary {
     @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "diary", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<SharedContent> sharedContents; // 일기와 공유된 콘텐츠의 관계
 }

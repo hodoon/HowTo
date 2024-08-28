@@ -25,7 +25,7 @@ public class UserSettingsDto {
 
         return UserSettingsDto.builder()
                 .id(userSetting.getId())
-                .userId(userSetting.getUser().getId()) // User의 ID를 매핑
+                .userId(userSetting.getUserId().getId()) // User의 ID를 매핑
                 .notificationEnabled(userSetting.isNotificationEnabled()) // 필드명 수정
                 .theme(userSetting.getTheme())
                 .language(userSetting.getLanguage())

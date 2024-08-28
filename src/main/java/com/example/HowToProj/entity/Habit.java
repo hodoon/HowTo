@@ -26,19 +26,19 @@ public class Habit {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private User user; // 습관 목표를 설정한 사용자
 
     @Column(name = "habit_name", length = 100, nullable = false)
-    private String habitName;
+    private String habitName; // 습관 목표의 이름
 
-    @Column(name = "goal_count", nullable = false)
-    private int goalCount;
+    @Column(name = "target_frequency", nullable = false)
+    private int targetFrequency; // 목표 횟수
 
     @Column(name = "start_date", nullable = false)
-    private LocalDate startDate;
+    private LocalDate startDate; // 습관 시작일
 
-    @Column(name = "end_date")
-    private LocalDate endDate;
+    @Column(name = "end_date", nullable = false)
+    private LocalDate endDate; // 습관 종료일
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)
