@@ -99,8 +99,10 @@ public class TokenProvider implements InitializingBean {
                 .parseClaimsJws(token)
                 .getBody();
 
+        String authoritiesStr = (claims.get(AUTHORITIES_KEY) != null) ? claims.get(AUTHORITIES_KEY).toString() : "";
         Collection<? extends GrantedAuthority> authorities =
-                Arrays.stream(claims.get(AUTHORITIES_KEY).toString().split(","))
+                Arrays.stream(authoritiesStr.split(","))
+                        .filter(auth -> !auth.isEmpty()) // 빈 문자열 필터링
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList());
 

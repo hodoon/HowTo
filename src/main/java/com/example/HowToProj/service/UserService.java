@@ -67,11 +67,11 @@ public class UserService {
                 .authorities(Collections.singleton(authority))
                 .activated(true)
                 .phoneNumber(userDto.getPhoneNumber())  // phoneNumber 설정
+                .birthDate(userDto.getBirthDate())  // 생년월일 설정
+                .gender(userDto.getGender())  // 성별 설정
                 .build();
 
         userRepository.save(user);
-
-
 
         // UserDto 객체 생성 및 반환
         return UserDto.builder()
@@ -79,6 +79,8 @@ public class UserService {
                 .username(user.getUsername())
                 .nickname(user.getNickname())
                 .phoneNumber(user.getPhoneNumber())
+                .birthDate(user.getBirthDate())  // 생년월일 반환
+                .gender(user.getGender())  // 성별 반환
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .deletedAt(user.getDeletedAt())
@@ -174,6 +176,43 @@ public class UserService {
             String email = tokenProvider.getUseremailFromToken(refreshToken);
             logout(email);  // 자동 로그아웃 처리
         }
+    }
+
+    // 회원탈퇴
+    @Transactional
+    public void deleteUser(String email, String password) {
+        User user = userRepository.findOneWithAuthoritiesByEmail(email)
+                .orElseThrow(() -> new NotFoundMemberException("사용자를 찾을 수 없습니다."));
+
+        // 비밀번호 확인
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+        }
+
+        // 사용자의 토큰 삭제
+        tokenService.deleteTokenByEmail(email);
+
+        // 사용자 삭제
+        userRepository.delete(user);
+
+        // SecurityContext 초기화
+        SecurityContextHolder.clearContext();
+    }
+
+    // 비밀번호 변경
+    @Transactional
+    public void changePassword(String email, String oldPassword, String newPassword) {
+        User user = userRepository.findOneWithAuthoritiesByEmail(email)
+                .orElseThrow(() -> new NotFoundMemberException("사용자를 찾을 수 없습니다."));
+
+        // 기존 비밀번호 확인
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new IllegalArgumentException("기존 비밀번호가 일치하지 않습니다.");
+        }
+
+        // 새로운 비밀번호 설정 (비밀번호는 암호화하여 저장)
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
     }
 
     @Transactional(readOnly = true)

@@ -4,10 +4,12 @@ package com.example.HowToProj.controller;
 import com.example.HowToProj.dto.LoginDto;
 import com.example.HowToProj.dto.TokenDto;
 import com.example.HowToProj.dto.UserDto;
+import com.example.HowToProj.exception.NotFoundMemberException;
 import com.example.HowToProj.handler.ErrorResponse;
 import com.example.HowToProj.jwt.TokenProvider;
 import com.example.HowToProj.service.UserService;
 
+import com.example.HowToProj.util.SecurityUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,6 +65,27 @@ public class UserController {
 
         log.info("Processing signup request for user: {}", userDto.getUsername());
         return ResponseEntity.ok(userService.signup(userDto));
+    }
+
+    // 회원탈퇴
+    @DeleteMapping("/me/deleteUser")
+    public ResponseEntity<Void> deleteUser(@RequestParam String password) {
+        String currentUsername = SecurityUtil.getCurrentUsername()
+                .orElseThrow(() -> new NotFoundMemberException("현재 로그인한 사용자를 찾을 수 없습니다."));
+
+        userService.deleteUser(currentUsername, password);
+        return ResponseEntity.noContent().build();
+    }
+
+    // 비밀번호 변경
+    @PutMapping("/me/changePassword")
+    public ResponseEntity<Void> changePassword(@RequestParam String oldPassword,
+                                                @RequestParam String newPassword) {
+        String currentUsername = SecurityUtil.getCurrentUsername()
+                .orElseThrow(() -> new NotFoundMemberException("현재 로그인한 사용자를 찾을 수 없습니다."));
+
+        userService.changePassword(currentUsername, oldPassword, newPassword);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/user")

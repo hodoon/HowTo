@@ -5,6 +5,8 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import jakarta.persistence.*;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Set;
 
@@ -38,6 +40,12 @@ public class User {
     @Column(name = "phone_number", length = 20, unique = true, nullable = false)
     private String phoneNumber;
 
+    @Column(name = "profile_image_url", length = 255)
+    private String profileImageUrl; // 프로필 이미지 URL
+
+    @Column(name = "status_message", length = 255)
+    private String statusMessage; // 상태 메시지 또는 자기소개
+
     @Column(name = "activated", nullable = false)
     private boolean activated;
 
@@ -52,6 +60,12 @@ public class User {
     )
     private Set<Authority> authorities;
 
+    @Column(name = "birth_date")
+    private LocalDate birthDate; // 생년월일
+
+    @Column(name = "gender", length = 10)
+    private String gender; // 성별
+
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -62,4 +76,12 @@ public class User {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    // 1:1 관계 - UserSetting
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private UserSettings userSettings;
+
+    // 1:N 관계 - UserActivity
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<UserActivity> activities;
 }

@@ -55,10 +55,10 @@ public class JwtFilter extends GenericFilterBean {
     private String resolveToken(HttpServletRequest request) {
         String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
         logger.debug("Authorization 헤더: {}", bearerToken);
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
+        if (StringUtils.hasText(bearerToken)) {
+            // 'Bearer '를 체크하지 않고 바로 반환
+            return bearerToken.startsWith("Bearer ") ? bearerToken.substring(7) : bearerToken;
         }
-
         return null;
     }
 }

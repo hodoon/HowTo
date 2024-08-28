@@ -1,46 +1,44 @@
-package com.example.HowToProj.calendar;
+package com.example.HowToProj.entity;
 
-import com.example.HowToProj.entity.User;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import jakarta.persistence.*;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "event")
+@Table(name = "habit")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @EntityListeners(AuditingEntityListener.class)
-public class Event {
+public class Habit {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "event_id")
+    @Column(name = "habit_id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "title", length = 100, nullable = false)
-    private String title;
+    @Column(name = "habit_name", length = 100, nullable = false)
+    private String habitName;
 
-    @Column(name = "description", length = 500)
-    private String description;
+    @Column(name = "goal_count", nullable = false)
+    private int goalCount;
 
-    @Column(name = "start_time", nullable = false)
-    private LocalDateTime startTime;
+    @Column(name = "start_date", nullable = false)
+    private LocalDate startDate;
 
-    @Column(name = "end_time", nullable = false)
-    private LocalDateTime endTime;
-
-    @Column(name = "location", length = 200)
-    private String location;
+    @Column(name = "end_date")
+    private LocalDate endDate;
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)
