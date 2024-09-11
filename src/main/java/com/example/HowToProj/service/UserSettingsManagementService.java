@@ -50,7 +50,7 @@ public class UserSettingsManagementService {
         Optional<UserSettings> optionalSettings = userSettingsRepository.findByUserId(userId);
 
         UserSettings settings = optionalSettings.orElseGet(() -> UserSettings.builder()
-                .userId(User.builder().id(userId).build()) // Placeholder for user
+                .user(User.builder().id(userId).build()) // Placeholder for user
                 .notificationEnabled(notificationEnabled)
                 .build());
 
@@ -64,7 +64,7 @@ public class UserSettingsManagementService {
     public UserSettingsDto createUserSettings(User userId, UserSettingsDto userSettingsDto) {
         // 새로운 사용자 설정 엔티티 생성
         UserSettings userSettings = UserSettings.builder()
-                .userId(userId)
+                .user(userId)
                 .notificationEnabled(userSettingsDto.isNotificationEnabled())
                 .theme(userSettingsDto.getTheme())
                 .language(userSettingsDto.getLanguage())
@@ -76,4 +76,5 @@ public class UserSettingsManagementService {
         UserSettings newUserSettings = userSettingsRepository.save(userSettings);
         return UserSettingsDto.fromEntity(newUserSettings);
     }
+
 }

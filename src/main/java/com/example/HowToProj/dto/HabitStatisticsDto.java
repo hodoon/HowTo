@@ -13,4 +13,5 @@ public class HabitStatisticsDto {
     private int totalDays;
     private int achievedDays;
     private double achievementRate;
+    private int consecutiveDays;
 }

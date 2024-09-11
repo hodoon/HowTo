@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.example.HowToProj.config.CustomPasswordEncoder;
 import com.example.HowToProj.dto.TokenDto;
 import com.example.HowToProj.dto.UserDto;
 import com.example.HowToProj.entity.*;
@@ -28,18 +29,18 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class UserService {
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final CustomPasswordEncoder customPasswordEncoder;
     private final TokenProvider tokenProvider;
     private final TokenService tokenService;
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
 
     public UserService(UserRepository userRepository,
-                        PasswordEncoder passwordEncoder,
+                        CustomPasswordEncoder customPasswordEncoder,
                         TokenProvider tokenProvider,
                         TokenService tokenService,
                         AuthenticationManagerBuilder authenticationManagerBuilder) {
         this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
+        this.customPasswordEncoder = customPasswordEncoder;
         this.tokenProvider = tokenProvider;
         this.tokenService = tokenService;
         this.authenticationManagerBuilder = authenticationManagerBuilder;
@@ -58,17 +59,23 @@ public class UserService {
                 .authorityName("ROLE_USER")
                 .build();
 
-        // User 객체 생성, 비밀번호는 PasswordEncoder를 사용해 암호화
+        // 사용자 정의 Salt 생성 (예: 이메일의 일부를 사용하는 방식)
+        String salt = userDto.getEmail().substring(0, 5);
+
+        // 비밀번호를 사용자 정의 Salt와 함께 암호화
+        String encryptedPassword = customPasswordEncoder.encode(userDto.getPassword(), salt);
+
+        // User 객체 생성, 비밀번호는 CustomPasswordEncoder를 사용해 암호화
         User user = User.builder()
                 .email(userDto.getEmail())
                 .username(userDto.getUsername())
                 .nickname(userDto.getNickname())
-                .password(passwordEncoder.encode(userDto.getPassword()))
+                .password(encryptedPassword)  // 암호화된 비밀번호 저장
                 .authorities(Collections.singleton(authority))
                 .activated(true)
-                .phoneNumber(userDto.getPhoneNumber())  // phoneNumber 설정
-                .birthDate(userDto.getBirthDate())  // 생년월일 설정
-                .gender(userDto.getGender())  // 성별 설정
+                .phoneNumber(userDto.getPhoneNumber())
+                .birthDate(userDto.getBirthDate())
+                .gender(userDto.getGender())
                 .build();
 
         userRepository.save(user);
@@ -79,8 +86,8 @@ public class UserService {
                 .username(user.getUsername())
                 .nickname(user.getNickname())
                 .phoneNumber(user.getPhoneNumber())
-                .birthDate(user.getBirthDate())  // 생년월일 반환
-                .gender(user.getGender())  // 성별 반환
+                .birthDate(user.getBirthDate())
+                .gender(user.getGender())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .deletedAt(user.getDeletedAt())
@@ -184,8 +191,11 @@ public class UserService {
         User user = userRepository.findOneWithAuthoritiesByEmail(email)
                 .orElseThrow(() -> new NotFoundMemberException("사용자를 찾을 수 없습니다."));
 
-        // 비밀번호 확인
-        if (!passwordEncoder.matches(password, user.getPassword())) {
+        // 사용자 정의 Salt 생성
+        String salt = email.substring(0, 5);  // 예시로 이메일의 첫 5자를 Salt로 사용
+
+        // 비밀번호 확인 (Salt 포함)
+        if (!customPasswordEncoder.matches(password, salt, user.getPassword())) {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
 
@@ -205,13 +215,16 @@ public class UserService {
         User user = userRepository.findOneWithAuthoritiesByEmail(email)
                 .orElseThrow(() -> new NotFoundMemberException("사용자를 찾을 수 없습니다."));
 
-        // 기존 비밀번호 확인
-        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+        // 사용자 정의 Salt 생성
+        String salt = email.substring(0, 5);  // 예시로 이메일의 첫 5자를 Salt로 사용
+
+        // 기존 비밀번호 확인 (Salt 포함)
+        if (!customPasswordEncoder.matches(oldPassword, salt, user.getPassword())) {
             throw new IllegalArgumentException("기존 비밀번호가 일치하지 않습니다.");
         }
 
-        // 새로운 비밀번호 설정 (비밀번호는 암호화하여 저장)
-        user.setPassword(passwordEncoder.encode(newPassword));
+        // 새로운 비밀번호 설정 (비밀번호는 암호화하여 저장, Salt 포함)
+        user.setPassword(customPasswordEncoder.encode(newPassword, salt));
         userRepository.save(user);
     }
 

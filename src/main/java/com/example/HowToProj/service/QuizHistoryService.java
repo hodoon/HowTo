@@ -2,6 +2,7 @@ package com.example.HowToProj.service;
 
 import com.example.HowToProj.dto.QuizHistoryDto;
 import com.example.HowToProj.dto.PointsDto;
+import com.example.HowToProj.dto.QuizStatisticsDto;
 import com.example.HowToProj.entity.QuizHistory;
 import com.example.HowToProj.entity.Points;
 import com.example.HowToProj.entity.User;
@@ -71,4 +72,25 @@ public class QuizHistoryService {
 
         return PointsDto.fromEntity(points);
     }
+
+    public QuizStatisticsDto getQuizStats(Long userId) {
+        User user = new User();
+        user.setId(userId);
+
+        List<QuizHistory> history = quizHistoryRepository.findByUser(user);
+
+        if (history.isEmpty()) {
+            return new QuizStatisticsDto(0,0 ,0.0); // 기본값을 반환
+        }
+
+        int totalQuizzes = history.size();
+        long correctAnswers = history.stream().filter(QuizHistory::isCorrect).count();
+        double correctPercentage = (totalQuizzes > 0) ? (double) correctAnswers / totalQuizzes * 100 : 0.0;
+
+        return QuizStatisticsDto.builder()
+                .totalQuizzes(totalQuizzes)
+                .correctAnswerPercentage(correctPercentage)
+                .build();
+    }
+
 }

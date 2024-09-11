@@ -30,7 +30,10 @@ public class JwtFilter extends GenericFilterBean {
         String requestURI = httpServletRequest.getRequestURI();
 
         // 공개 엔드포인트는 JWT 필터를 적용하지 않도록 설정
-        if (requestURI.startsWith("/api/signup") || requestURI.startsWith("/api/login") || requestURI.startsWith("/api/authenticate")) {
+        if (requestURI.startsWith("/api/signup")
+                || requestURI.startsWith("/api/login")
+                || requestURI.startsWith("/api/authenticate")
+                || requestURI.startsWith("/swagger-ui/index.html")) {
             filterChain.doFilter(servletRequest, servletResponse);
             logger.debug("requestURI : {}", requestURI);
             logger.debug("servletRequest : {}", servletRequest);

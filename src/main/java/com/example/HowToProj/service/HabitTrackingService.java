@@ -88,7 +88,7 @@ public class HabitTrackingService {
         return optionalHabit.map(HabitDto::fromEntity).orElseThrow(() -> new NotFoundHabitException("Habit not found with ID: " + habitId));
     }
 
-    public HabitStatisticsDto getHabitStatistics(Long habitId) {
+    public HabitStatisticsDto getHabitStats(Long habitId) {
         Habit habit = habitRepository.findById(habitId)
                 .orElseThrow(() -> new NotFoundHabitException("Habit not found with ID: " + habitId));
 
@@ -97,6 +97,7 @@ public class HabitTrackingService {
 
         long totalDays = habit.getEndDate().toEpochDay() - habit.getStartDate().toEpochDay() + 1;
         long achievedDays = records.stream().filter(HabitRecord::isAchieved).count();
+        long consecutiveDays = calculateConsecutiveAchievementDays(records);
 
         double achievementRate = totalDays > 0 ? (double) achievedDays / totalDays * 100 : 0.0;
 
@@ -106,6 +107,25 @@ public class HabitTrackingService {
                 .totalDays((int) totalDays)
                 .achievedDays((int) achievedDays)
                 .achievementRate(achievementRate)
+                .consecutiveDays((int) consecutiveDays)
                 .build();
+    }
+
+    private long calculateConsecutiveAchievementDays(List<HabitRecord> records) {
+        long consecutiveDays = 0;
+        long maxConsecutiveDays = 0;
+
+        for (HabitRecord record : records) {
+            if (record.isAchieved()) {
+                consecutiveDays++;
+                if (consecutiveDays > maxConsecutiveDays) {
+                    maxConsecutiveDays = consecutiveDays;
+                }
+            } else {
+                consecutiveDays = 0;
+            }
+        }
+
+        return maxConsecutiveDays;
     }
 }

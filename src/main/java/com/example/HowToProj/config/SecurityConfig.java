@@ -2,6 +2,7 @@ package com.example.HowToProj.config;
 
 import com.example.HowToProj.jwt.*;
 
+import com.example.HowToProj.service.CustomOAuth2UserService;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -53,7 +54,9 @@ public class SecurityConfig {
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                 )
                 .authorizeHttpRequests(authorizeHttpRequests -> authorizeHttpRequests
-                        .requestMatchers("/api/hello", "/api/authenticate", "/api/signup").permitAll()
+                        .requestMatchers("/api/hello", "/api/authenticate", "/api/signup",
+                                "/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**"
+                                ,"/api/calendar/holidays").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sessionManagement ->
@@ -61,8 +64,21 @@ public class SecurityConfig {
                 )
                 .headers(headers ->
                         headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
+                ).oauth2Login(oauth2Login -> oauth2Login
+                        .loginPage("/oauth2/authorization/google") // OAuth2 로그인 페이지 URL
+                        .defaultSuccessUrl("/loginSuccess") // 로그인 성공 시 리디렉션 URL
+                        .failureUrl("/loginFailure") // 로그인 실패 시 리디렉션 URL
+                        .userInfoEndpoint(userInfoEndpoint ->
+                                userInfoEndpoint
+                                        .userService(oauth2UserService()) // OAuth2 사용자 서비스 설정
+                        )
                 )
                 .addFilterBefore(new JwtFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class);
         return http.build();
+    }
+
+    @Bean
+    public CustomOAuth2UserService oauth2UserService() {
+        return new CustomOAuth2UserService(); // OAuth2 사용자 서비스 설정
     }
 }

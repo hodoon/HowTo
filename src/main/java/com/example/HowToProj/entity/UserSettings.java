@@ -25,7 +25,7 @@ public class UserSettings {
 
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false)
-    private User userId;
+    private User user;
 
     @Column(name = "notification_enabled", nullable = false)
     private boolean notificationEnabled;
